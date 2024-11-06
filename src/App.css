@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+
+@layer components {
+  .card {
+    @apply bg-white rounded-lg shadow-sm transition-all duration-300 ease-in-out hover:shadow-md;
+    transform: translateY(0);
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+  }
+
+  .btn-primary {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  .btn-primary:hover {
+    @apply transform scale-[1.02];
+  }
+
+  /* Add smooth transitions to sidebar items */
+  .sidebar-item {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  /* Add hover effects to table rows */
+  .table-row-hover {
+    @apply transition-all duration-200;
+  }
+
+  .table-row-hover:hover {
+    @apply bg-gray-50 transform scale-[1.01];
+  }
+}
