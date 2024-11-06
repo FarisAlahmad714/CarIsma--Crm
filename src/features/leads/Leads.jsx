@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+// src/features/leads/Leads.jsx
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
   Filter, 
   Search, 
-  SlidersHorizontal, 
   Download,
   RefreshCw
 } from 'lucide-react';
+import { useInventory } from '../inventory/hooks/useInventory';
 import LeadList from './components/LeadList';
 import LeadForm from './components/LeadForm';
 import LeadFilters from './components/LeadFilters';
@@ -15,8 +16,11 @@ import LeadStats from './components/LeadStats';
 import { useLeads } from './hooks/useLeads';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../contexts/NotificationContext';
+import LeadDetail from './components/LeadDetail';
+
 const Leads = () => {
   const { user } = useAuth();
+  const { vehicles } = useInventory();
   const { 
     leads, 
     loading, 
@@ -25,9 +29,10 @@ const Leads = () => {
     updateLead, 
     deleteLead, 
     updateLeadStatus,
-    refreshLeads 
+    refreshLeads,
   } = useLeads();
-
+  const { addNotification } = useNotifications();
+  const [viewingLead, setViewingLead] = useState(null);
   const [showAddLead, setShowAddLead] = useState(false);
   const [editingLead, setEditingLead] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -53,7 +58,9 @@ const Leads = () => {
     converted: leads.filter(l => l.status === 'completed').length,
   };
 
-const { addNotification } = useNotifications();
+  const handleViewLead = (lead) => {
+    setViewingLead(lead);
+  };
 
   const handleAddLead = async (leadData) => {
     try {
@@ -66,7 +73,7 @@ const { addNotification } = useNotifications();
     }
   };
 
-    const handleStatusChange = async (leadId, newStatus) => {
+  const handleStatusChange = async (leadId, newStatus) => {
     try {
       await updateLeadStatus(leadId, newStatus);
       addNotification('success', `Lead status updated to ${newStatus}`);
@@ -96,16 +103,40 @@ const { addNotification } = useNotifications();
         updatedAt: new Date().toISOString()
       });
       setEditingLead(null);
+      addNotification('success', 'Lead updated successfully');
     } catch (err) {
       console.error('Failed to update lead:', err);
-      // TODO: Show error notification
+      addNotification('error', 'Failed to update lead');
     }
   };
 
-
-
   const handleExportLeads = () => {
-    // TODO: Implement lead export functionality
+    const headers = ['ID', 'Name', 'Email', 'Phone', 'Vehicle', 'Status', 'Priority', 'Created At'];
+    const rows = leads.map(lead => [
+      lead.id,
+      lead.name,
+      lead.email,
+      lead.phone,
+      lead.vehicle,
+      lead.status,
+      lead.priority,
+      lead.createdAt
+    ]);
+
+    let csvContent = 'data:text/csv;charset=utf-8,';
+    csvContent += headers.join(',') + '\r\n';
+    rows.forEach(rowArray => {
+      const row = rowArray.join(',');
+      csvContent += row + '\r\n';
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'leads.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const getFilteredLeads = () => {
@@ -117,7 +148,7 @@ const { addNotification } = useNotifications();
           lead.name,
           lead.email,
           lead.phone,
-          lead.vehicle?.model,
+          lead.vehicle,
           lead.notes
         ].map(field => field?.toLowerCase());
         
@@ -293,14 +324,24 @@ const { addNotification } = useNotifications();
       ) : (
         /* Lead List */
         <LeadList
-          leads={filteredLeads}
-          view={view}
-          onEdit={setEditingLead}
-          onStatusChange={handleStatusChange}
-          onDelete={handleDeleteLead}
-          />
+        leads={filteredLeads}
+        view={view}
+        onEdit={setEditingLead}
+        onDelete={handleDeleteLead}
+        onView={handleViewLead}
+        />
       )}
-
+ {/* Lead Detail Modal */}
+ <AnimatePresence>
+        {viewingLead && (
+          <LeadDetail
+            lead={viewingLead}
+            onClose={() => setViewingLead(null)}
+            onEdit={setEditingLead}
+            onDelete={handleDeleteLead}
+          />
+        )}
+      </AnimatePresence>
       {/* Add/Edit Lead Modal */}
       <AnimatePresence>
         {(showAddLead || editingLead) && (
@@ -311,6 +352,7 @@ const { addNotification } = useNotifications();
               setShowAddLead(false);
               setEditingLead(null);
             }}
+            availableVehicles={vehicles}
           />
         )}
       </AnimatePresence>

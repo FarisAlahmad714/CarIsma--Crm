@@ -1,3 +1,5 @@
+// src/utils/storage.js
+
 export const STORAGE_KEYS = {
   USER: 'carisma_user',
   COMPANY: 'carisma_company',
@@ -6,9 +8,8 @@ export const STORAGE_KEYS = {
   AUTH_TOKEN: 'carisma_auth_token',      // For JWT or session tokens
   PREFERENCES: 'carisma_preferences',     // For user preferences
   NOTIFICATIONS: 'carisma_notifications',  // For notifications state
-  LEADS: 'carisma_leads' ,
-  VEHICLES: 'carisma_vehicles'  
-
+  LEADS: 'carisma_leads',
+  VEHICLES: 'availableVehicles', // Corrected key
 };
 
 export const storage = {

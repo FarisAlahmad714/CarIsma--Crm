@@ -231,4 +231,4 @@ const LeadDetail = ({ lead, onClose, onUpdate }) => {
   );
 };
 
-export default LeadDetail;yes 
+export default LeadDetail;

@@ -1,11 +1,16 @@
 // src/features/inventory/hooks/useInventory.js
+
 import { useState, useEffect } from 'react';
 import { storage, STORAGE_KEYS } from '../../../utils/storage';
 
 export const useInventory = () => {
-  const [vehicles, setVehicles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+    const [vehicles, setVehicles] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+  useEffect(() => {
+    loadVehicles();
+  }, []);
 
   const loadVehicles = () => {
     try {
@@ -22,9 +27,8 @@ export const useInventory = () => {
   const addVehicle = async (vehicleData) => {
     try {
       const newVehicle = {
-        id: Date.now(),
+        id: Date.now(), // Consider using a UUID for more robust ID generation
         ...vehicleData,
-        status: 'available',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -71,31 +75,6 @@ export const useInventory = () => {
     }
   };
 
-  const updateVehicleStatus = async (id, status) => {
-    try {
-      const updatedVehicles = vehicles.map(vehicle => 
-        vehicle.id === id 
-          ? { 
-              ...vehicle, 
-              status, 
-              updatedAt: new Date().toISOString() 
-            } 
-          : vehicle
-      );
-
-      storage.set(STORAGE_KEYS.VEHICLES, updatedVehicles);
-      setVehicles(updatedVehicles);
-      return updatedVehicles.find(vehicle => vehicle.id === id);
-    } catch (err) {
-      setError('Failed to update vehicle status');
-      throw err;
-    }
-  };
-
-  useEffect(() => {
-    loadVehicles();
-  }, []);
-
   return {
     vehicles,
     loading,
@@ -103,7 +82,6 @@ export const useInventory = () => {
     addVehicle,
     updateVehicle,
     deleteVehicle,
-    updateVehicleStatus,
     refreshVehicles: loadVehicles
   };
 };

@@ -1,14 +1,18 @@
+// src/features/leads/hooks/useLeads.js
+
 import { useState, useEffect } from 'react';
 import { storage, STORAGE_KEYS } from '../../../utils/storage';
 
 export const useLeads = () => {
   const [leads, setLeads] = useState([]);
+  const [availableVehicles, setAvailableVehicles] = useState([]); // Added state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load leads from storage
+  // Load leads and available vehicles from storage
   useEffect(() => {
     loadLeads();
+    loadAvailableVehicles();
   }, []);
 
   const loadLeads = () => {
@@ -18,6 +22,16 @@ export const useLeads = () => {
     } catch (err) {
       setError('Failed to load leads');
       console.error('Error loading leads:', err);
+    }
+  };
+
+  const loadAvailableVehicles = () => {
+    try {
+      const storedVehicles = storage.get(STORAGE_KEYS.VEHICLES) || [];
+      setAvailableVehicles(storedVehicles);
+    } catch (err) {
+      setError('Failed to load available vehicles');
+      console.error('Error loading vehicles:', err);
     } finally {
       setLoading(false);
     }
@@ -26,7 +40,7 @@ export const useLeads = () => {
   const addLead = async (leadData) => {
     try {
       const newLead = {
-        id: Date.now(),
+        id: Date.now(), // Consider using a UUID for better uniqueness
         ...leadData,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -42,21 +56,27 @@ export const useLeads = () => {
     }
   };
 
-  const updateLead = async (id, leadData) => {
+  // In useLeads.js
+const updateLead = async (id, leadData) => {
     try {
+      const existingLead = leads.find(lead => lead.id === id);
+      if (!existingLead) {
+        throw new Error('Lead not found');
+      }
+  
+      const updatedLead = {
+        ...existingLead,
+        ...leadData,
+        updatedAt: new Date().toISOString()
+      };
+  
       const updatedLeads = leads.map(lead => 
-        lead.id === id 
-          ? { 
-              ...lead, 
-              ...leadData, 
-              updatedAt: new Date().toISOString() 
-            } 
-          : lead
+        lead.id === id ? updatedLead : lead
       );
-
-      storage.set(STORAGE_KEYS.LEADS, updatedLeads);
+  
+      await storage.set(STORAGE_KEYS.LEADS, updatedLeads);
       setLeads(updatedLeads);
-      return updatedLeads.find(lead => lead.id === id);
+      return updatedLead;
     } catch (err) {
       setError('Failed to update lead');
       throw err;
@@ -97,6 +117,7 @@ export const useLeads = () => {
 
   return {
     leads,
+    availableVehicles, // Returned here
     loading,
     error,
     addLead,

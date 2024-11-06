@@ -1,94 +1,101 @@
+// src/features/leads/components/LeadList.jsx
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../../hooks/useAuth';
 import LeadCard from './LeadCard';
 
-const LeadList = ({ leads, searchQuery, filters, onEdit, onView }) => {
-  const filterLeads = () => {
-    return leads.filter(lead => {
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        if (!lead.name.toLowerCase().includes(query) &&
-            !lead.email.toLowerCase().includes(query) &&
-            !lead.vehicle.toLowerCase().includes(query)) {
-          return false;
-        }
-      }
+const LeadList = ({ leads, onEdit, onDelete, onView , view = 'list' }) => {
+  const { user } = useAuth();
 
-      // Status filter
-      if (filters.status !== 'all' && lead.status.toLowerCase() !== filters.status) {
-        return false;
-      }
-
-      // Assignment filter
-      if (filters.assignedTo === 'unassigned' && lead.assignedTo) {
-        return false;
-      } else if (filters.assignedTo === 'me' && lead.assignedTo !== 'Current User') { // Replace with actual user check
-        return false;
-      }
-
-      // Date range filter
-      if (filters.dateRange !== 'all') {
-        const leadDate = new Date(lead.lastContact);
-        const today = new Date();
-        
-        switch (filters.dateRange) {
-          case 'today':
-            if (leadDate.toDateString() !== today.toDateString()) return false;
-            break;
-          case 'week':
-            const weekAgo = new Date(today.setDate(today.getDate() - 7));
-            if (leadDate < weekAgo) return false;
-            break;
-          case 'month':
-            const monthAgo = new Date(today.setMonth(today.getMonth() - 1));
-            if (leadDate < monthAgo) return false;
-            break;
-          default:
-            break;
-        }
-      }
-
-      return true;
-    });
-  };
-
-  const filteredLeads = filterLeads();
+  if (leads.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500 text-lg">No leads found</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      {filteredLeads.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-12"
-        >
-          <p className="text-gray-500 text-lg">
-            {searchQuery ? 'No leads match your search' : 'No leads found'}
-          </p>
-          {searchQuery && (
-            <p className="text-gray-400 mt-2">
-              Try adjusting your search or filters
-            </p>
-          )}
-        </motion.div>
-      ) : (
-        <AnimatePresence>
-          {filteredLeads.map((lead) => (
-            <motion.div
-              key={lead.id}
-              layout
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
-              <LeadCard
-                lead={lead}
-                onEdit={onEdit}
-                onView={onView}
-              />
-            </motion.div>
-          ))}
-        </AnimatePresence>
+    <div className="space-y-6">
+    {view === 'list' && (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr> {/* Remove onClick from here */}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Name/Contact
+                </th>
+                {/* ... other headers ... */}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {leads.map((lead) => (
+                <motion.tr
+                  key={lead.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="hover:bg-gray-50 cursor-pointer"
+                  onClick={() => onView(lead)} // Add onClick here
+                >
+                  {/* ... rest of the row content ... */}
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent row click when clicking buttons
+                        onEdit(lead);
+                      }}
+                      className="text-blue-600 hover:text-blue-900 mr-4"
+                    >
+                      Edit
+                    </button>
+                    {(user?.role === 'admin' || user?.role === 'superadmin') && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent row click when clicking buttons
+                          onDelete(lead.id);
+                        }}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Grid View */}
+      {view === 'grid' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <AnimatePresence>
+            {leads.map((lead) => (
+              <motion.div
+                key={lead.id}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                onClick={() => onView(lead)} // Add onClick here too
+                className="cursor-pointer"
+              >
+                <LeadCard
+                  lead={lead}
+                  onEdit={(e) => {
+                    e.stopPropagation();
+                    onEdit(lead);
+                  }}
+                  onDelete={(e) => {
+                    e.stopPropagation();
+                    onDelete(lead.id);
+                  }}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
       )}
     </div>
   );
